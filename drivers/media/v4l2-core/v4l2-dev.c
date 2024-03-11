@@ -25,6 +25,7 @@
 #include <linux/kmod.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
+#include <linux/io_uring.h>
 
 #include <media/v4l2-common.h>
 #include <media/v4l2-device.h>
@@ -470,6 +471,14 @@ static int v4l2_release(struct inode *inode, struct file *filp)
 	return ret;
 }
 
+static int v4l2_uring_cmd(struct io_uring_cmd *ioucmd, unsigned int issue_flags)
+{
+	if (issue_flags & IO_URING_F_IOPOLL)
+		return -EOPNOTSUPP;
+
+	return video_ioctl2(ioucmd->file, ioucmd->cmd_op, ioucmd->sqe->addr);
+}
+
 static const struct file_operations v4l2_fops = {
 	.owner = THIS_MODULE,
 	.read = v4l2_read,
@@ -484,6 +493,7 @@ static const struct file_operations v4l2_fops = {
 	.release = v4l2_release,
 	.poll = v4l2_poll,
 	.llseek = no_llseek,
+	.uring_cmd = v4l2_uring_cmd,
 };
 
 /**
