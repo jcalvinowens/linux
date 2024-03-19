@@ -34,12 +34,12 @@ static void __kprobes *patch_map(void *addr, int fixmap)
 	bool image = is_image_text(uintaddr);
 	struct page *page;
 
+	BUILD_BUG_ON(!IS_ENABLED(CONFIG_STRICT_MODULE_RWX));
+
 	if (image)
 		page = phys_to_page(__pa_symbol(addr));
-	else if (IS_ENABLED(CONFIG_STRICT_MODULE_RWX))
-		page = vmalloc_to_page(addr);
 	else
-		return addr;
+		page = vmalloc_to_page(addr);
 
 	BUG_ON(!page);
 	return (void *)set_fixmap_offset(fixmap, page_to_phys(page) +
